@@ -71,17 +71,10 @@ class ObservationBuilder:
             return None
         robot_names = ["left", "right"]
 
-        print(f"Last command: {last_command}")
-
         joint_state = self._get_joint_state(snapshot_response)
         tcp_state = self._get_tcp_state(snapshot_response, robot_names)
         gripper_state = self._get_gripper_state(snapshot_response)
         last_command = self._get_last_command(tcp_state, last_command)
-
-        print(f"Joint shape: {joint_state.shape}")
-        print(f"TCP shape: {tcp_state.shape}")
-        print(f"Gripper shape: {gripper_state.shape}")
-        print(f"Last Command shape: {last_command.shape}")
 
         state_array = []
         if self.include_joint_state:
@@ -94,13 +87,6 @@ class ObservationBuilder:
 
         full_state = np.concatenate(state_array).astype(np.float32)
 
-        # Dummy fix: add an extra 0 to the proper position!
-        print(full_state.shape)
-        for i, name in enumerate(self.state_feature_names):
-            print(i, name)
-        for i, name in enumerate(self.cfg.input_features["observation.state"]):
-            print(i, name)
-        print(self.cfg.input_features["observation.state"])
         # exit()
         assert full_state.shape == self.cfg.input_features["observation.state"].shape, (
             f"Observation Builder State shape mismatch: expected {self.cfg.input_features['observation.state'].shape}, "
