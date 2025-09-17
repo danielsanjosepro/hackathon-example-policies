@@ -58,7 +58,7 @@ class RobotInterface:
     ):
         """Sends a predicted action to the robot service."""
         numpy_action = action.squeeze(0).to("cpu").numpy()
-        self.last_command = numpy_action[:, dc.LEFT_GRIPPER_IDX]
+        self.last_command = numpy_action[: dc.LEFT_GRIPPER_IDX]
 
         if action_mode in (ActionMode.DELTA_TCP, ActionMode.ABS_TCP):
             target = _build_cart_target(numpy_action)
