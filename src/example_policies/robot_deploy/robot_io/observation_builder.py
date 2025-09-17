@@ -87,7 +87,13 @@ class ObservationBuilder:
 
         full_state = np.concatenate(state_array).astype(np.float32)
 
+        # Dummy fix: add an extra 0 to the proper position!
         print(full_state)
+        print(type(full_state))
+        for i, name in enumerate(self.state_feature_names):
+            print(i, name)
+        for i, name in enumerate(self.cfg.input_features["observation.state"]):
+            print(i, name)
         print(self.cfg.input_features["observation.state"])
         # exit()
         assert full_state.shape == self.cfg.input_features["observation.state"].shape, (
