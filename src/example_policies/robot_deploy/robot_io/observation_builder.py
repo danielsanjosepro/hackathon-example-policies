@@ -71,6 +71,8 @@ class ObservationBuilder:
             return None
         robot_names = ["left", "right"]
 
+        print(f"Last command: {last_command}")
+
         joint_state = self._get_joint_state(snapshot_response)
         tcp_state = self._get_tcp_state(snapshot_response, robot_names)
         gripper_state = self._get_gripper_state(snapshot_response)
