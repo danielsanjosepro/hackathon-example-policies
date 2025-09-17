@@ -120,6 +120,14 @@ def inference_loop(
 
             model_to_action_trans.action_mode = ActionMode.DELTA_TCP
 
+            if model_to_action_trans.action_mode in (
+                ActionMode.ABS_TCP,
+                ActionMode.ABS_JOINT,
+            ):
+                raise NotImplementedError(
+                    "Only delta action mode is implemented for replay."
+                )
+
             action = model_to_action_trans.translate(action, observation)
             print_info(step, observation, action)
 
