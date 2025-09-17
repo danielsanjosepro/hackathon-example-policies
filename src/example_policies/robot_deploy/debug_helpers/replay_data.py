@@ -54,6 +54,7 @@ def inference_loop(
     service_stub: robot_service_pb2_grpc.RobotServiceStub,
     ep_index: int = 0,
     replay_frequency: float = 5.0,
+    ask_for_input: bool = True,
 ):
     """Replay data from a given directory on the robot.
 
@@ -62,6 +63,7 @@ def inference_loop(
         service_stub (robot_service_pb2_grpc.RobotServiceStub): gRPC service stub.
         ep_index (int): Episode index to run.
         replay_frequency (float): Frequency to replay the data.
+        ask_for_input (bool): Whether to ask for user input at each action.
     """
     fake_repo_id = data_dir.name
     # data_cfg = DatasetConfig(repo_id=fake_repo_id, root=data_dir, episodes=[ep_index])
@@ -125,7 +127,8 @@ def inference_loop(
 
             action = batch["action"]
 
-            input("Press Enter to send next action...")
+            if ask_for_input:
+                input("Press Enter to send next action...")
 
             model_to_action_trans.action_mode = ActionMode.DELTA_TCP
 
@@ -179,6 +182,12 @@ def main():
         "--replay-frequency",
         type=float,
         default=5.0,
+        help="Frequency to replay the data (default: 5.0 Hz)",
+    )
+    parser.add_argument(
+        "--continuous-replay",
+        action="store_true",
+        help="Whether to continuously loop over the episode and not ask for user input at each action (default: False)",
     )
 
     args = parser.parse_args()
@@ -187,7 +196,11 @@ def main():
     stub = robot_service_pb2_grpc.RobotServiceStub(channel)
     try:
         inference_loop(
-            args.data_dir, stub, args.episode, replay_frequency=args.replay_frequency
+            args.data_dir,
+            stub,
+            args.episode,
+            replay_frequency=args.replay_frequency,
+            ask_for_input=not args.continuous_replay,
         )
     except Exception as e:
         print(f"Error occurred: {e}")
