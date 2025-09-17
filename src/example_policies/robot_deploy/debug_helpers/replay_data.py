@@ -120,8 +120,6 @@ def inference_loop(
 
             model_to_action_trans.action_mode = ActionMode.ABS_TCP
 
-            exit()
-
             action = model_to_action_trans.translate(action, observation)
             print_info(step, observation, action)
 
