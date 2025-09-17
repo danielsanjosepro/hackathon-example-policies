@@ -53,7 +53,16 @@ def inference_loop(
     data_dir: Path,
     service_stub: robot_service_pb2_grpc.RobotServiceStub,
     ep_index: int = 0,
+    replay_frequency: float = 5.0,
 ):
+    """Replay data from a given directory on the robot.
+
+    Args:
+        data_dir (Path): Path to the data directory.
+        service_stub (robot_service_pb2_grpc.RobotServiceStub): gRPC service stub.
+        ep_index (int): Episode index to run.
+        replay_frequency (float): Frequency to replay the data.
+    """
     fake_repo_id = data_dir.name
     # data_cfg = DatasetConfig(repo_id=fake_repo_id, root=data_dir, episodes=[ep_index])
 
@@ -99,14 +108,14 @@ def inference_loop(
     print_info(step, observation, action)
 
     input("Press Enter to move robot to start...")
-
-    # robot_interface.send_action(torch.from_numpy(action), ActionMode.ABS_TCP)
+    # TODO: add move to start
+    robot_interface.send_action(torch.from_numpy(action), ActionMode.ABS_TCP)
 
     input("Press Enter to continue...")
+
     # Inference Loop
     print("Starting inference loop...")
-    hz = 1.0
-    period = 1.0 / hz
+    period = 1.0 / replay_frequency
     while not done:
         start_time = time.time()
         observation = robot_interface.get_observation("cpu")
@@ -137,7 +146,9 @@ def inference_loop(
         # wait for execution to finish
         elapsed_time = time.time() - start_time
         sleep_duration = period - elapsed_time
-        print(sleep_duration)
+
+        print(f"Sleep duration: {sleep_duration} s")
+
         # wait for input
         # input("Press Enter to continue...")
         time.sleep(max(0.0, sleep_duration))
@@ -164,13 +175,20 @@ def main():
         default=0,
         help="Episode index to run (default: 0)",
     )
+    parser.add_argument(
+        "--replay-frequency",
+        type=float,
+        default=5.0,
+    )
 
     args = parser.parse_args()
 
     channel = grpc.insecure_channel(args.server)
     stub = robot_service_pb2_grpc.RobotServiceStub(channel)
     try:
-        inference_loop(args.data_dir, stub, args.episode)
+        inference_loop(
+            args.data_dir, stub, args.episode, replay_frequency=args.replay_frequency
+        )
     except Exception as e:
         print(f"Error occurred: {e}")
         raise e
