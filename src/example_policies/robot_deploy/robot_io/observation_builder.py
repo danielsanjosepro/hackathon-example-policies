@@ -76,6 +76,11 @@ class ObservationBuilder:
         gripper_state = self._get_gripper_state(snapshot_response)
         last_command = self._get_last_command(tcp_state, last_command)
 
+        print(f"Joint shape: {joint_state.shape}")
+        print(f"TCP shape: {tcp_state.shape}")
+        print(f"Gripper shape: {gripper_state.shape}")
+        print(f"Last Command shape: {last_command.shape}")
+
         state_array = []
         if self.include_joint_state:
             state_array.append(joint_state)
@@ -88,8 +93,7 @@ class ObservationBuilder:
         full_state = np.concatenate(state_array).astype(np.float32)
 
         # Dummy fix: add an extra 0 to the proper position!
-        print(full_state)
-        print(type(full_state))
+        print(full_state.shape)
         for i, name in enumerate(self.state_feature_names):
             print(i, name)
         for i, name in enumerate(self.cfg.input_features["observation.state"]):
