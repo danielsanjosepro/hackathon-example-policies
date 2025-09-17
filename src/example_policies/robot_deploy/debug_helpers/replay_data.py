@@ -118,7 +118,7 @@ def inference_loop(
 
             input("Press Enter to send next action...")
 
-            model_to_action_trans.action_mode = ActionMode.ABS_TCP
+            model_to_action_trans.action_mode = ActionMode.DELTA_TCP
 
             action = model_to_action_trans.translate(action, observation)
             print_info(step, observation, action)
