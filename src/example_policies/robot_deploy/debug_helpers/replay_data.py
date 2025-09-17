@@ -54,7 +54,6 @@ def inference_loop(
     service_stub: robot_service_pb2_grpc.RobotServiceStub,
     ep_index: int = 0,
 ):
-
     fake_repo_id = data_dir.name
     # data_cfg = DatasetConfig(repo_id=fake_repo_id, root=data_dir, episodes=[ep_index])
 
@@ -120,6 +119,9 @@ def inference_loop(
             input("Press Enter to send next action...")
 
             model_to_action_trans.action_mode = ActionMode.ABS_TCP
+
+            exit()
+
             action = model_to_action_trans.translate(action, observation)
             print_info(step, observation, action)
 
