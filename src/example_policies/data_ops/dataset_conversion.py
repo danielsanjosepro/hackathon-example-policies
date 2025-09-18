@@ -26,6 +26,22 @@ from example_policies.data_ops.pipeline.dataset_writer import DatasetWriter
 from example_policies.data_ops.pipeline.frame_buffer import FrameBuffer
 
 
+def compute_bag_duration(episode_path: pathlib.Path) -> float:
+    """Compute the duration of a rosbag2 file in seconds."""
+    try:
+        with open(episode_path, "rb") as f:
+            reader = NonSeekingReader(f, record_size_limit=None)
+            summary = reader.get_summary()
+            duration = (
+                summary.statistics.message_end_time
+                - summary.statistics.message_start_time
+            ) / 1e9
+            return duration
+    except Exception as e:
+        print(f"Error reading {episode_path}: {e}")
+        return False
+
+
 def convert_episodes(
     episode_dir: pathlib.Path,
     output_dir: pathlib.Path,
