@@ -95,7 +95,7 @@ def delete_blacklisted_episodes(dataset_path: pathlib.Path, output_path: pathlib
             print(f"Episode {episode_idx} files not found (already deleted?)")
 
     if not dry_run and deleted_episodes:
-        _update_metadata_after_deletion(meta_manager, deleted_episodes, working_path)
+        _renumber_episodes_and_update_metadata(meta_manager, deleted_episodes, working_path)
         print(
             f"Successfully created cleaned dataset with {len(deleted_episodes)} episodes removed."
         )
@@ -107,30 +107,76 @@ def delete_blacklisted_episodes(dataset_path: pathlib.Path, output_path: pathlib
         )
 
 
-def _update_metadata_after_deletion(
+def _renumber_episodes_and_update_metadata(
     meta_manager: MetaManager, deleted_episodes: List[int], dataset_path: pathlib.Path
 ):
-    """Update metadata files after deleting episodes."""
-
-    for episode_idx in deleted_episodes:
-        if str(episode_idx) in meta_manager.episode_mapping:
-            del meta_manager.episode_mapping[str(episode_idx)]
-
-    meta_manager.episodes = [
-        ep
-        for ep in meta_manager.episodes
-        if ep["episode_index"] not in deleted_episodes
-    ]
+    """Renumber remaining episodes sequentially and update metadata."""
+    episode_dir = dataset_path / c.EPISODE_DIR
+    video_dir = dataset_path / c.VIDEO_DIR
+    
+    # Get all remaining episode files sorted by episode number
+    remaining_episodes = []
+    for episode in meta_manager.episodes:
+        if episode["episode_index"] not in deleted_episodes:
+            remaining_episodes.append(episode)
+    
+    remaining_episodes.sort(key=lambda x: x["episode_index"])
+    
+    # Create mapping from old episode index to new sequential index
+    old_to_new_mapping = {}
+    for new_idx, episode in enumerate(remaining_episodes):
+        old_idx = episode["episode_index"]
+        old_to_new_mapping[old_idx] = new_idx
+    
+    # Renumber episode files
+    print("Renumbering episode files...")
+    for old_idx, new_idx in old_to_new_mapping.items():
+        if old_idx != new_idx:
+            # Rename episode parquet file
+            old_episode_file = episode_dir / f"episode_{old_idx:06d}.parquet"
+            new_episode_file = episode_dir / f"episode_{new_idx:06d}.parquet"
+            if old_episode_file.exists():
+                old_episode_file.rename(new_episode_file)
+                print(f"  Renamed {old_episode_file.name} -> {new_episode_file.name}")
+            
+            # Rename episode video directory
+            old_video_dir = video_dir / f"episode_{old_idx:06d}"
+            new_video_dir = video_dir / f"episode_{new_idx:06d}"
+            if old_video_dir.exists():
+                old_video_dir.rename(new_video_dir)
+                print(f"  Renamed {old_video_dir.name} -> {new_video_dir.name}")
+    
+    # Update metadata with new sequential indices
+    new_episode_mapping = {}
+    for episode in remaining_episodes:
+        old_idx = episode["episode_index"]
+        new_idx = old_to_new_mapping[old_idx]
+        episode["episode_index"] = new_idx
+        
+        # Update episode mapping if it exists
+        old_key = str(old_idx)
+        if old_key in meta_manager.episode_mapping:
+            new_episode_mapping[str(new_idx)] = meta_manager.episode_mapping[old_key]
+    
+    # Update stats with new indices
+    for stat in meta_manager.stats:
+        if stat["episode_index"] not in deleted_episodes:
+            old_idx = stat["episode_index"]
+            stat["episode_index"] = old_to_new_mapping[old_idx]
+    
+    # Filter out deleted episodes from stats
     meta_manager.stats = [
-        stat
-        for stat in meta_manager.stats
-        if stat["episode_index"] not in deleted_episodes
+        stat for stat in meta_manager.stats 
+        if stat["episode_index"] < len(remaining_episodes)
     ]
+    
+    meta_manager.episodes = remaining_episodes
+    meta_manager.episode_mapping = new_episode_mapping
 
     if meta_manager.info:
-        meta_manager.info["total_episodes"] = len(meta_manager.episodes)
+        meta_manager.info["total_episodes"] = len(remaining_episodes)
         meta_manager.info["total_frames"] = sum(
-            stat.get("num_frames", 0) for stat in meta_manager.stats
+            episode["length"] for episode in remaining_episodes
         )
         if meta_manager.info["total_episodes"] > 0:
             meta_manager.info["splits"]["train"] = (
@@ -138,7 +184,6 @@ def _update_metadata_after_deletion(
             )
 
     meta_manager.blacklist = []
-
     meta_manager.save(dataset_path)
 
 
