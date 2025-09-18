@@ -27,7 +27,13 @@ from example_policies.data_ops.pipeline.frame_buffer import FrameBuffer
 
 
 def compute_bag_duration(episode_path: pathlib.Path) -> float:
-    """Compute the duration of a rosbag2 file in seconds."""
+    """Compute the duration of a rosbag2 file in seconds.
+
+    Args:
+        episode_path (pathlib.Path): Path to the rosbag2 file.
+    Returns:
+        float: Duration in seconds, or False if an error occurred.
+    """
     try:
         with open(episode_path, "rb") as f:
             reader = NonSeekingReader(f, record_size_limit=None)
@@ -40,6 +46,23 @@ def compute_bag_duration(episode_path: pathlib.Path) -> float:
     except Exception as e:
         print(f"Error reading {episode_path}: {e}")
         return False
+
+
+def get_bags_durations(episode_dir: pathlib.Path):
+    """Get the durations of all rosbag2 files in a directory.
+
+    Args:
+        episode_dir (pathlib.Path): Path to the directory with rosbag2 files.
+    Returns:
+        dict: Mapping of episode file paths to their durations in seconds.
+    """
+    episode_paths = list(episode_dir.rglob("*.mcap"))
+    durations = {}
+    for episode_path in episode_paths:
+        duration = compute_bag_duration(episode_path)
+        if duration is not False:
+            durations[str(episode_path)] = duration
+    return durations
 
 
 def convert_episodes(
