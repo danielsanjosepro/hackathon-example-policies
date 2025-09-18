@@ -34,18 +34,13 @@ def compute_bag_duration(episode_path: pathlib.Path) -> float:
     Returns:
         float: Duration in seconds, or False if an error occurred.
     """
-    try:
-        with open(episode_path, "rb") as f:
-            reader = NonSeekingReader(f, record_size_limit=None)
-            summary = reader.get_summary()
-            duration = (
-                summary.statistics.message_end_time
-                - summary.statistics.message_start_time
-            ) / 1e9
-            return duration
-    except Exception as e:
-        print(f"Error reading {episode_path}: {e}")
-        return False
+    with open(episode_path, "rb") as f:
+        reader = NonSeekingReader(f, record_size_limit=None)
+        summary = reader.get_summary()
+        duration = (
+            summary.statistics.message_end_time - summary.statistics.message_start_time
+        ) / 1e9
+        return duration
 
 
 def get_bags_durations(episode_dir: pathlib.Path):
@@ -54,14 +49,19 @@ def get_bags_durations(episode_dir: pathlib.Path):
     Args:
         episode_dir (pathlib.Path): Path to the directory with rosbag2 files.
     Returns:
-        dict: Mapping of episode file paths to their durations in seconds.
+        dict: Mapping of episode file index to their durations in seconds.
     """
     episode_paths = list(episode_dir.rglob("*.mcap"))
     durations = {}
-    for episode_path in episode_paths:
-        duration = compute_bag_duration(episode_path)
-        if duration is not False:
-            durations[str(episode_path)] = duration
+    for i, episode_path in enumerate(episode_paths):
+        try:
+            duration = compute_bag_duration(episode_path)
+        except Exception as e:
+            print(
+                f"Could not compute duration for {episode_path} due to {type(e).__name__}: {e}"
+            )
+            continue
+        durations[i] = duration
     return durations
 
 
@@ -89,25 +89,33 @@ def convert_episodes(
     frame_start = global_start
     global_frames = 0
 
-    blacklist = []
+    durations = get_bags_durations(episode_dir)
+    too_short_episodes = [
+        key
+        for key, duration in durations.items()
+        if duration < config.min_episode_seconds
+    ]
+    print(
+        f"Found {len(too_short_episodes)} episodes that are too short (<{config.min_episode_seconds}s): {too_short_episodes}"
+    )
+    # If we are deleting episodes that are too short, we keep the blacklist empty and let the user later fill it manually
+    blacklist = too_short_episodes.copy() if not config.delete_short_episodes else []
 
     for ep_idx, episode_path in enumerate(episode_paths):
         print(f"Processing {episode_path}...")
 
+        if ep_idx in too_short_episodes and config.delete_short_episodes:
+            print(
+                f"Episode too short ({durations[ep_idx]:.2f}s). Skipping this episode and ignoring it: {episode_path}"
+            )
+            continue
+
         try:
             # Use MCAP reader for .mcap files
             with open(episode_path, "rb") as f:
-                reader = SeekingReader(f, record_size_limit=None)
+                reader = NonSeekingReader(f, record_size_limit=None)
                 seen_frames = config.subsample_offset
                 saved_frames = 0
-
-                summary = reader.get_summary()
-                duration = (
-                    summary.statistics.message_end_time
-                    - summary.statistics.message_start_time
-                ) / 1e9
-
-                print(f"  - Duration: {duration}s")
 
                 # Iterate through messages with automatic deserialization
                 for schema, channel, message in reader.iter_messages(
