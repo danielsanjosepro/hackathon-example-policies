@@ -19,7 +19,7 @@ import time
 
 # Workaround for torch / lerobot bug
 import numpy as np
-from mcap.reader import NonSeekingReader, McapReader
+from mcap.reader import NonSeekingReader, SeekingReader
 
 from example_policies.data_ops.config import argparse_pipeline_config, pipeline_config
 from example_policies.data_ops.pipeline.dataset_writer import DatasetWriter
@@ -58,7 +58,7 @@ def convert_episodes(
         try:
             # Use MCAP reader for .mcap files
             with open(episode_path, "rb") as f:
-                reader = McapReader(f, record_size_limit=None)
+                reader = SeekingReader(f, record_size_limit=None)
                 seen_frames = config.subsample_offset
                 saved_frames = 0
 
