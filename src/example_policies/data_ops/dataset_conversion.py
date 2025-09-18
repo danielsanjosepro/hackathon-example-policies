@@ -62,6 +62,9 @@ def convert_episodes(
                 seen_frames = config.subsample_offset
                 saved_frames = 0
 
+                reader.get_summary()
+                exit()
+
                 # Iterate through messages with automatic deserialization
                 for schema, channel, message in reader.iter_messages(
                     topics=frame_buffer.get_topic_names()
@@ -103,15 +106,16 @@ def convert_episodes(
                     print(f"Saving {episode_path} processed with {seen_frames} frames.")
                     perform_save = dataset_manager.save_episode(ep_idx)
                     if perform_save:
-                        episode_counter_path_dict[actual_episode_counter] = str(
-                            episode_path
-                        )
-
                         if saved_frames < config.min_episode_frames:
                             print(
                                 f"Episode too short ({saved_frames} frames), Adding to Blacklist."
                             )
                             blacklist.append(actual_episode_counter)
+
+                        episode_counter_path_dict[actual_episode_counter] = str(
+                            episode_path
+                        )
+
                         actual_episode_counter += 1
         except Exception as e:
             print(

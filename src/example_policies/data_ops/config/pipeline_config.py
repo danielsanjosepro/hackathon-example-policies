@@ -81,6 +81,7 @@ class PipelineConfig:
         target_fps: Desired resulting FPS after subsampling.
         subsample_offset: Phase offset into frame sequence when subsampling.
         min_episode_seconds: Minimum episode duration retained.
+        delete_short_episodes: If True, discard episodes shorter than min_episode_seconds, otherwise append them to blacklist.
 
     """
 
@@ -120,7 +121,9 @@ class PipelineConfig:
     target_fps: int = 10
     subsample_offset: int = 0
 
+    # Dealing with short episodes
     min_episode_seconds: int = 15
+    delete_short_episodes: bool = False
 
     def __post_init__(self):
         self.include_joint_states = (
