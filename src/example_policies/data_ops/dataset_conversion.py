@@ -65,10 +65,14 @@ def convert_episodes(
                 print(f"reader.get_summary(): {reader.get_summary().statistics}")
 
                 print(
+                    f"  - Start Time: {reader.get_summary().statistics.message_start_time}"
+                )
+
+                print(
                     f"  - Duration: {reader.get_summary().statistics.message_end_time - reader.get_summary().statistics.message_start_time:.2f}s"
                 )
 
-                raise RuntimeError("Test")
+                raise TimeoutError("Test")
 
                 # Iterate through messages with automatic deserialization
                 for schema, channel, message in reader.iter_messages(
@@ -122,7 +126,7 @@ def convert_episodes(
                         )
 
                         actual_episode_counter += 1
-        except RuntimeError as e:
+        except TimeoutError as e:
             print("User interruption, stopping conversion.")
             break
         except Exception as e:
