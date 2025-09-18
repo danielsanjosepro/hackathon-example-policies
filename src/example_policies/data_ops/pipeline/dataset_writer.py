@@ -116,6 +116,10 @@ class DatasetWriter:
         performed_save = False
         for dataset_type, dataset in self.datasets.items():
             if self.dataset_frame_counter[dataset_type] > 0:
+                import logging
+
+                logging.basicConfig(level=logging.ERROR)
+
                 dataset.save_episode()
                 performed_save = True
             self.dataset_frame_counter[dataset_type] = 0
