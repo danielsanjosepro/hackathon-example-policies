@@ -71,6 +71,8 @@ def convert_episodes(
     config: pipeline_config.PipelineConfig,
 ):
     """Convert the episodes to the LeRobot dataset format."""
+    print(f"Converting episodes from {episode_dir} to {output_dir}...")
+
     features = pipeline_config.build_features(config)
     frame_buffer = FrameBuffer(config)
 
