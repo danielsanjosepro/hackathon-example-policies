@@ -70,12 +70,11 @@ def convert_episodes(
 
                 print(f"  - Duration: {duration}s")
 
-                continue
-
                 # Iterate through messages with automatic deserialization
                 for schema, channel, message in reader.iter_messages(
                     topics=frame_buffer.get_topic_names()
                 ):
+                    break
                     topic = channel.topic
                     msg_data = message.data
                     schema_name = schema.name
