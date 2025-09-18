@@ -89,6 +89,7 @@ def convert_episodes(
     frame_start = global_start
     global_frames = 0
 
+    print("Checking for episodes that are too short...")
     durations = get_bags_durations(episode_dir)
     too_short_episodes = [
         key
