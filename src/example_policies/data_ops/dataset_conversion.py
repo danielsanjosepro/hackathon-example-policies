@@ -91,27 +91,10 @@ def convert_episodes(
     frame_start = global_start
     global_frames = 0
 
-    print("Checking for episodes that are too short...")
-    durations = get_bags_durations(episode_dir)
-    too_short_episodes = [
-        key
-        for key, duration in durations.items()
-        if duration < config.min_episode_seconds
-    ]
-    print(
-        f"Found {len(too_short_episodes)} episodes that are too short (<{config.min_episode_seconds}s): {too_short_episodes}"
-    )
-    # If we are deleting episodes that are too short, we keep the blacklist empty and let the user later fill it manually
-    blacklist = too_short_episodes.copy() if not config.delete_short_episodes else []
+    blacklist = []
 
     for ep_idx, episode_path in enumerate(episode_paths):
         print(f"Processing {episode_path}...")
-
-        if ep_idx in too_short_episodes and config.delete_short_episodes:
-            print(
-                f"Episode too short ({durations[ep_idx]:.2f}s). Skipping this episode and ignoring it: {episode_path}"
-            )
-            continue
 
         try:
             # Use MCAP reader for .mcap files
@@ -161,15 +144,14 @@ def convert_episodes(
                     print(f"Saving {episode_path} processed with {seen_frames} frames.")
                     perform_save = dataset_manager.save_episode(ep_idx)
                     if perform_save:
+                        episode_counter_path_dict[actual_episode_counter] = str(
+                            episode_path
+                        )
                         if saved_frames < config.min_episode_frames:
                             print(
                                 f"Episode too short ({saved_frames} frames), Adding to Blacklist."
                             )
                             blacklist.append(actual_episode_counter)
-
-                        episode_counter_path_dict[actual_episode_counter] = str(
-                            episode_path
-                        )
 
                         actual_episode_counter += 1
         except TimeoutError as e:
@@ -188,7 +170,7 @@ def convert_episodes(
         json.dump(config.to_dict(), f, indent=2)
 
     with open(output_dir / "meta" / "blacklist.json", "w", encoding="utf-8") as f:
-        json.dump(blacklist, f, indent=2)
+        json.dump(blacklist, f, indent=4)
 
 
 def save_episode(dataset, episode_idx, pause_dataset=None):
