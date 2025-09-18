@@ -63,12 +63,14 @@ def convert_episodes(
                 saved_frames = 0
 
                 summary = reader.get_summary()
+                duration = (
+                    summary.statistics.message_end_time
+                    - summary.statistics.message_start_time
+                ) / 1e9
 
-                print(
-                    f"  - Duration: {summary.statistics.message_end_time - summary.statistics.message_start_time:.2f}s"
-                )
+                print(f"  - Duration: {duration}s")
 
-                raise TimeoutError("Test")
+                continue
 
                 # Iterate through messages with automatic deserialization
                 for schema, channel, message in reader.iter_messages(
