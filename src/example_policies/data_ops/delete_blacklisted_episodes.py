@@ -22,30 +22,44 @@ from example_policies.data_ops.merger import constants as c
 from example_policies.data_ops.merger.meta_manager import MetaManager
 
 
-def delete_blacklisted_episodes(dataset_path: pathlib.Path, dry_run: bool = False):
-    """Delete episodes that are listed in the blacklist from a LerobotDataset.
+def delete_blacklisted_episodes(dataset_path: pathlib.Path, output_path: pathlib.Path, dry_run: bool = False):
+    """Create a copy of the dataset with blacklisted episodes removed.
 
     Args:
-        dataset_path: Path to the LerobotDataset directory
-        dry_run: If True, only show what would be deleted without actually deleting
+        dataset_path: Path to the source LerobotDataset directory
+        output_path: Path where the cleaned dataset copy will be created
+        dry_run: If True, only show what would be deleted without actually creating the copy
     """
     if not dataset_path.exists():
         raise FileNotFoundError(f"Dataset directory not found: {dataset_path}")
+    
+    if output_path.exists():
+        raise FileExistsError(f"Output directory already exists: {output_path}")
 
     meta_manager = MetaManager()
     meta_manager.load_from_files(dataset_path)
 
     if not meta_manager.blacklist:
-        print("No blacklisted episodes found.")
+        print("No blacklisted episodes found. Copying entire dataset.")
+        if not dry_run:
+            shutil.copytree(dataset_path, output_path)
+            print(f"Dataset copied to {output_path}")
         return
 
     print(
         f"Found {len(meta_manager.blacklist)} blacklisted episodes: {meta_manager.blacklist}"
     )
 
-    episode_dir = dataset_path / c.EPISODE_DIR
-    video_dir = dataset_path / c.VIDEO_DIR
-    meta_dir = dataset_path / c.META_DIR
+    if not dry_run:
+        print(f"Copying dataset from {dataset_path} to {output_path}...")
+        shutil.copytree(dataset_path, output_path)
+        print("Dataset copied successfully.")
+
+    # Work on the copied dataset
+    working_path = output_path if not dry_run else dataset_path
+    episode_dir = working_path / c.EPISODE_DIR
+    video_dir = working_path / c.VIDEO_DIR
+    meta_dir = working_path / c.META_DIR
 
     deleted_episodes = []
 
@@ -81,14 +95,15 @@ def delete_blacklisted_episodes(dataset_path: pathlib.Path, dry_run: bool = Fals
             print(f"Episode {episode_idx} files not found (already deleted?)")
 
     if not dry_run and deleted_episodes:
-        _update_metadata_after_deletion(meta_manager, deleted_episodes, dataset_path)
+        _update_metadata_after_deletion(meta_manager, deleted_episodes, working_path)
         print(
-            f"Successfully deleted {len(deleted_episodes)} episodes and updated metadata."
+            f"Successfully created cleaned dataset with {len(deleted_episodes)} episodes removed."
         )
 
     if dry_run:
+        existing_episodes = len([ep for ep in meta_manager.blacklist if (dataset_path / c.EPISODE_DIR / f'episode_{ep:06d}.parquet').exists()])
         print(
-            f"\nDry run complete. {len([ep for ep in meta_manager.blacklist if (dataset_path / c.EPISODE_DIR / f'episode_{ep:06d}.parquet').exists()])} episodes would be deleted."
+            f"\nDry run complete. Would create a copy at {output_path} with {existing_episodes} episodes removed."
         )
 
 
@@ -129,20 +144,23 @@ def _update_metadata_after_deletion(
 
 def main():
     parser = argparse.ArgumentParser(
-        description="Delete episodes listed in the blacklist from a LerobotDataset"
+        description="Create a copy of a LerobotDataset with blacklisted episodes removed"
     )
     parser.add_argument(
-        "dataset_path", type=pathlib.Path, help="Path to the LerobotDataset directory"
+        "dataset_path", type=pathlib.Path, help="Path to the source LerobotDataset directory"
+    )
+    parser.add_argument(
+        "output_path", type=pathlib.Path, help="Path where the cleaned dataset copy will be created"
     )
     parser.add_argument(
         "--dry-run",
         action="store_true",
-        help="Show what would be deleted without actually deleting files",
+        help="Show what would be done without actually creating the copy",
     )
 
     args = parser.parse_args()
 
-    delete_blacklisted_episodes(args.dataset_path, dry_run=args.dry_run)
+    delete_blacklisted_episodes(args.dataset_path, args.output_path, dry_run=args.dry_run)
 
 
 if __name__ == "__main__":
