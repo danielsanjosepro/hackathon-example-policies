@@ -124,7 +124,6 @@ def convert_episodes(
                 for schema, channel, message in reader.iter_messages(
                     topics=frame_buffer.get_topic_names()
                 ):
-                    break
                     topic = channel.topic
                     msg_data = message.data
                     schema_name = schema.name
