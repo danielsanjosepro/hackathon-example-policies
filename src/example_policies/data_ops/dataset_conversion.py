@@ -62,14 +62,10 @@ def convert_episodes(
                 seen_frames = config.subsample_offset
                 saved_frames = 0
 
-                print(f"reader.get_summary(): {reader.get_summary().statistics}")
+                summary = reader.get_summary()
 
                 print(
-                    f"  - Start Time: {reader.get_summary().statistics.message_start_time}"
-                )
-
-                print(
-                    f"  - Duration: {reader.get_summary().statistics.message_end_time - reader.get_summary().statistics.message_start_time:.2f}s"
+                    f"  - Duration: {summary.statistics.message_end_time - summary.statistics.message_start_time:.2f}s"
                 )
 
                 raise TimeoutError("Test")
