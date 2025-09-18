@@ -32,6 +32,9 @@ def monkey_patch_dataset():
         self, idx: int, ep_idx: int
     ) -> tuple[dict[str, list[int | bool]]]:
         if self.episodes is not None:
+            if ep_idx not in self.episodes:
+                # Episode was blacklisted/filtered out, raise a clear error
+                raise IndexError(f"Episode {ep_idx} is not available (likely blacklisted). Available episodes: {self.episodes[:10]}...")
             ep_idx = self.episodes.index(ep_idx)
         return original_fn(self, idx, ep_idx)
 
