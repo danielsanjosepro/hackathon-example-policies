@@ -62,8 +62,8 @@ def convert_episodes(
                 seen_frames = config.subsample_offset
                 saved_frames = 0
 
-                reader.get_summary()
-                exit()
+                print(reader.get_summary())
+                raise RuntimeError("Test")
 
                 # Iterate through messages with automatic deserialization
                 for schema, channel, message in reader.iter_messages(
@@ -117,6 +117,9 @@ def convert_episodes(
                         )
 
                         actual_episode_counter += 1
+        except RuntimeError as e:
+            print("User interruption, stopping conversion.")
+            break
         except Exception as e:
             print(
                 f"Skipping faulty file: {episode_path} due to {type(e).__name__}: {e}"
