@@ -111,14 +111,21 @@ def inference_loop(
     period = 1.0 / replay_frequency
 
     while not done:
+        if step >= len(dataset):
+            print("Reached the end of the dataset.")
+            break
+
         if dataset[step]["episode_index"] != ep_index:
             step += 1
             continue
 
         start_time = time.time()
         observation = robot_interface.get_observation("cpu")
+        time_to_get_obs = time.time() - start_time
+        print(f"Time to get observation: {time_to_get_obs} s")
 
         if observation:
+            print(f"Observation received: {observation}")
             action = dataset[step]["action"]
 
             if ask_for_input:
