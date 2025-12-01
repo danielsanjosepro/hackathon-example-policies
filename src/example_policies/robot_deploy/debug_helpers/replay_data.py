@@ -62,6 +62,7 @@ def inference_loop(
     ep_index: int = 0,
     replay_frequency: float = 5.0,
     ask_for_input: bool = True,
+    home_before_start: bool = True,
 ):
     """Replay data from a given directory on the robot.
 
@@ -102,7 +103,8 @@ def inference_loop(
         time.sleep(0.1)
 
     input("Press Enter to move robot to start...")
-    robot_interface.move_home()
+    if home_before_start:
+        robot_interface.move_home()
 
     input("Press Enter to continue...")
 
@@ -180,6 +182,11 @@ def main():
         "--continuous-replay",
         action="store_true",
         help="Whether to continuously loop over the episode and not ask for user input at each action (default: False)",
+    )
+    parser.add_argument(
+        "--no-home-before-start",
+        action="store_true",
+        help="Whether to skip moving the robot to home position before starting (default: False)",
     )
 
     args = parser.parse_args()
