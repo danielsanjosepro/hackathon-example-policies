@@ -21,16 +21,12 @@ import grpc
 # Lerobot Environment Bug
 import numpy as np
 import torch
-from lerobot.configs.default import DatasetConfig
-from lerobot.datasets.lerobot_dataset import LeRobotDataset, LeRobotDatasetMetadata
+from lerobot.datasets.lerobot_dataset import LeRobotDataset
 
 from example_policies.robot_deploy.action_translator import ActionTranslator
 from example_policies.robot_deploy.policy_loader import load_metadata
 from example_policies.robot_deploy.robot_io.robot_interface import RobotInterface
-from example_policies.robot_deploy.robot_io.robot_service import (
-    robot_service_pb2,
-    robot_service_pb2_grpc,
-)
+from example_policies.robot_deploy.robot_io.robot_service import robot_service_pb2_grpc
 from example_policies.robot_deploy.utils import print_info
 from example_policies.robot_deploy.utils.action_mode import ActionMode
 
@@ -76,14 +72,12 @@ def inference_loop(
         ask_for_input (bool): Whether to ask for user input at each action.
     """
     fake_repo_id = data_dir.name
-    # data_cfg = DatasetConfig(repo_id=fake_repo_id, root=data_dir, episodes=[ep_index])
 
     meta_data = load_metadata(data_dir)
-    # Wrap in dictionary to emulate policy config
+
     cfg = FakeConfig(meta_data)
     dbg_printer = print_info.InfoPrinter(cfg)
 
-    # We can then instantiate the dataset with these delta_timestamps configuration.
     dataset = LeRobotDataset(
         repo_id=fake_repo_id,
         root=data_dir,
@@ -93,20 +87,12 @@ def inference_loop(
     robot_interface = RobotInterface(service_stub, cfg)
     model_to_action_trans = ActionTranslator(cfg)
 
-    dataloader = torch.utils.data.DataLoader(
-        dataset,
-        num_workers=4,
-        batch_size=1,
-        shuffle=False,
-        drop_last=True,
-    )
+    print(f"Replaying episode {ep_index} from {data_dir}...")
+    print(f"The robot interface is {robot_interface}")
+    print(f"The action translator is {model_to_action_trans}")
 
     step = 0
     done = False
-
-    iterator = iter(dataloader)
-
-    batch = next(iterator)
 
     observation = None
     while not observation:
@@ -116,30 +102,22 @@ def inference_loop(
     input("Press Enter to move robot to start...")
     robot_interface.move_home()
 
-    if model_to_action_trans.action_mode in (ActionMode.DELTA_TCP, ActionMode.ABS_TCP):
-        state = batch["observation.state"]
-        state = cfg.get_tcp_from_state(state[0].cpu().numpy())
-        # The robot expects the action to include gripper state as the last two elements.
-        DEFAULT_GRIPPER_STATE = [0, 0]  # [gripper_position, gripper_velocity]
-        action = np.concatenate([state, DEFAULT_GRIPPER_STATE]).astype(np.float32)
-        # add batch axis
-        action = action[None, :]
-        print("Moving robot to start position...")
-        robot_interface.send_action(torch.from_numpy(action), ActionMode.ABS_TCP)
-
     input("Press Enter to continue...")
 
     # Inference Loop
     print("Starting inference loop...")
     period = 1.0 / replay_frequency
+
     while not done:
+        if dataset[step]["episode_index"] != ep_index:
+            step += 1
+            continue
+
         start_time = time.time()
         observation = robot_interface.get_observation("cpu")
 
         if observation:
-            batch = next(iterator)
-
-            action = batch["action"]
+            action = dataset[step]["action"]
 
             if ask_for_input:
                 input("Press Enter to send next action...")
@@ -148,9 +126,7 @@ def inference_loop(
             dbg_printer.print(step, observation, action, raw_action=False)
 
             robot_interface.send_action(action, model_to_action_trans.action_mode)
-            # policy._queues["action"].clear()
 
-        # wait for execution to finish
         elapsed_time = time.time() - start_time
         sleep_duration = period - elapsed_time
 
