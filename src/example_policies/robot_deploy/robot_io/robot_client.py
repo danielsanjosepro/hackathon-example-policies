@@ -62,7 +62,6 @@ class RobotClient:
         ctrl_mode = RobotClient.CART_WAYPOINT
 
         if self.control_mode != ctrl_mode:
-            logger.info("Preparing Cartesian Waypoint Execution Mode")
             prepare_request = robot_service_pb2.PrepareExecutionRequest()
             prepare_request.execution_mode = (
                 robot_service_pb2.ExecutionMode.EXECUTION_MODE_CARTESIAN_WAYPOINT

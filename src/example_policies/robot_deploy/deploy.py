@@ -43,7 +43,6 @@ def inference_loop(
     service_stub: robot_service_pb2_grpc.RobotServiceStub,
     controller=None,
 ):
-
     if controller is None:
         controller = RobotClient.CART_WAYPOINT
 
@@ -69,14 +68,17 @@ def inference_loop(
                 action = policy.select_action(observation)
                 print(f"\n=== RAW MODEL PREDICTION ===")
                 dbg_printer.print(step, observation, action, raw_action=True)
-                print()
             action = model_to_action_trans.translate(action, observation)
 
             print(f"\n=== ABSOLUTE ROBOT COMMANDS ===")
             dbg_printer.print(step, observation, action, raw_action=False)
 
             robot_interface.send_action(
-                action, model_to_action_trans.action_mode, controller
+                action,
+                model_to_action_trans.action_mode
+                if model_to_action_trans.action_mode
+                else ActionMode.ABS_TCP,
+                controller,
             )
             # policy._queues["action"].clear()
 

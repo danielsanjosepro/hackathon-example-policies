@@ -32,9 +32,6 @@ from example_policies.robot_deploy.robot_io.robot_service import robot_service_p
 from example_policies.robot_deploy.utils import print_info
 from example_policies.robot_deploy.utils.action_mode import ActionMode
 
-logging.basicConfig(level=logging.INFO)
-logger = logging.getLogger(__name__)
-
 
 class FakeConfig:
     def __init__(self, m) -> None:
@@ -94,10 +91,10 @@ def inference_loop(
     robot_interface.client.control_mode = RobotClient.CART_WAYPOINT
     model_to_action_trans = ActionTranslator(cfg)
 
-    logger.info(f"Replaying episode {ep_index} from {data_dir}...")
-    logger.info(f"The robot interface is {robot_interface.__dict__}")
-    logger.info(f"The robot client is {robot_interface.client.__dict__}")
-    logger.info(f"The action translator is {model_to_action_trans.__dict__}")
+    print(f"Replaying episode {ep_index} from {data_dir}...")
+    print(f"The robot interface is {robot_interface.__dict__}")
+    print(f"The robot client is {robot_interface.client.__dict__}")
+    print(f"The action translator is {model_to_action_trans.__dict__}")
 
     step = 0
     done = False
@@ -114,7 +111,7 @@ def inference_loop(
     input("Press Enter to continue...")
 
     # Inference Loop
-    logger.info("Starting inference loop...")
+    print("Starting inference loop...")
     period = 1.0 / replay_frequency
 
     while not done:
@@ -122,8 +119,8 @@ def inference_loop(
             print("Reached the end of the dataset.")
             break
 
-        logger.info(f"Step {step} / {len(dataset)}")
-        logger.info(f"Dataset keys: {dataset[step].keys()}")
+        print(f"Step {step} / {len(dataset)}")
+        print(f"Dataset keys: {dataset[step].keys()}")
 
         if dataset[step]["episode_index"] != ep_index:
             step += 1
@@ -132,11 +129,11 @@ def inference_loop(
         start_time = time.time()
         observation = robot_interface.get_observation("cpu")
         time_to_get_obs = time.time() - start_time
-        logger.info(f"Time to get observation: {time_to_get_obs} s")
+        print(f"Time to get observation: {time_to_get_obs} s")
 
         if observation:
-            logger.debug(f"Observation received: {observation}")
             action = dataset[step]["action"]
+            dbg_printer.print(step, observation, action, raw_action=True)
 
             if ask_for_input:
                 input("Press Enter to send next action...")
@@ -153,7 +150,7 @@ def inference_loop(
         elapsed_time = time.time() - start_time
         sleep_duration = period - elapsed_time
 
-        logger.debug(f"Sleep duration: {sleep_duration} s")
+        print(f"Sleep duration: {sleep_duration} s")
 
         # wait for input
         # input("Press Enter to continue...")
