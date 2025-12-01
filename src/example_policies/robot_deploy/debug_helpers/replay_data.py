@@ -133,12 +133,14 @@ def inference_loop(
 
         if observation:
             action = dataset[step]["action"]
+            print(f"\n=== RAW MODEL PREDICTION ===")
             dbg_printer.print(step, observation, action, raw_action=True)
 
             if ask_for_input:
                 input("Press Enter to send next action...")
 
             action = model_to_action_trans.translate(action, observation)
+            print(f"\n=== ABSOLUTE ROBOT COMMANDS ===")
             dbg_printer.print(step, observation, action, raw_action=False)
 
             robot_interface.send_action(
