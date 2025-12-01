@@ -90,6 +90,7 @@ def inference_loop(
 
     print(f"Replaying episode {ep_index} from {data_dir}...")
     print(f"The robot interface is {robot_interface.__dict__}")
+    print(f"The robot client is {robot_interface.client.__dict__}")
     print(f"The action translator is {model_to_action_trans.__dict__}")
 
     step = 0
