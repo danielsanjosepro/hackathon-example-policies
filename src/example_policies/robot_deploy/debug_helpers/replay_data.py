@@ -88,6 +88,7 @@ def inference_loop(
     )
 
     robot_interface = RobotInterface(service_stub, cfg)
+    robot_interface.client.control_mode = RobotClient.CART_WAYPOINT
     model_to_action_trans = ActionTranslator(cfg)
 
     print(f"Replaying episode {ep_index} from {data_dir}...")
