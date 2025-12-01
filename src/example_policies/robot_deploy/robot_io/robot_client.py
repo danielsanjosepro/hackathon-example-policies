@@ -13,6 +13,9 @@
 # limitations under the License.
 
 from .robot_service import robot_service_pb2, robot_service_pb2_grpc
+import logging
+
+logger = logging.getLogger(__name__)
 
 
 class RobotClient:
@@ -59,6 +62,7 @@ class RobotClient:
         ctrl_mode = RobotClient.CART_WAYPOINT
 
         if self.control_mode != ctrl_mode:
+            logger.info("Preparing Cartesian Waypoint Execution Mode")
             prepare_request = robot_service_pb2.PrepareExecutionRequest()
             prepare_request.execution_mode = (
                 robot_service_pb2.ExecutionMode.EXECUTION_MODE_CARTESIAN_WAYPOINT
@@ -114,7 +118,6 @@ class RobotClient:
         Returns:
             The response from the MoveHome gRPC call.
         """
-        # Reset control_mode because moving home is a special operation that does not use the previous control mode.
         self.control_mode = None
 
         move_home_request = robot_service_pb2.MoveHomeRequest()
