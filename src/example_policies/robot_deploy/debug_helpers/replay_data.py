@@ -143,7 +143,7 @@ def inference_loop(
             robot_interface.send_action(
                 action,
                 action_mode=model_to_action_trans.action_mode,
-                ctrl_mode=RobotClient.CART_WAYPOINT,
+                ctrl_mode=RobotClient.CART_DIRECT,
             )
 
         elapsed_time = time.time() - start_time
