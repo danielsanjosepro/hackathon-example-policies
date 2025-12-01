@@ -120,7 +120,7 @@ def inference_loop(
             break
 
         print(f"Step {step} / {len(dataset)}")
-        print(f"Dataset keys: {dataset[step].keys()}")
+        print(f"Dataset keys: {dataset[step]}")
 
         if dataset[step]["episode_index"] != ep_index:
             step += 1
