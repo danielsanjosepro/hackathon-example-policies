@@ -115,6 +115,8 @@ def inference_loop(
             print("Reached the end of the dataset.")
             break
 
+        print(f"Step {step} / {len(dataset)}")
+
         if dataset[step]["episode_index"] != ep_index:
             step += 1
             continue
