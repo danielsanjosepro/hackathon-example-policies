@@ -13,6 +13,7 @@
 # limitations under the License.
 
 import argparse
+import logging
 import time
 from pathlib import Path
 
@@ -20,17 +21,19 @@ import grpc
 
 # Lerobot Environment Bug
 import numpy as np
-import torch
 from lerobot.datasets.lerobot_dataset import LeRobotDataset
-from example_policies.robot_deploy.robot_io.robot_client import RobotClient
 from rich import print
 
 from example_policies.robot_deploy.action_translator import ActionTranslator
 from example_policies.robot_deploy.policy_loader import load_metadata
+from example_policies.robot_deploy.robot_io.robot_client import RobotClient
 from example_policies.robot_deploy.robot_io.robot_interface import RobotInterface
 from example_policies.robot_deploy.robot_io.robot_service import robot_service_pb2_grpc
 from example_policies.robot_deploy.utils import print_info
 from example_policies.robot_deploy.utils.action_mode import ActionMode
+
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger(__name__)
 
 
 class FakeConfig:
@@ -91,10 +94,10 @@ def inference_loop(
     robot_interface.client.control_mode = RobotClient.CART_WAYPOINT
     model_to_action_trans = ActionTranslator(cfg)
 
-    print(f"Replaying episode {ep_index} from {data_dir}...")
-    print(f"The robot interface is {robot_interface.__dict__}")
-    print(f"The robot client is {robot_interface.client.__dict__}")
-    print(f"The action translator is {model_to_action_trans.__dict__}")
+    logger.info(f"Replaying episode {ep_index} from {data_dir}...")
+    logger.info(f"The robot interface is {robot_interface.__dict__}")
+    logger.info(f"The robot client is {robot_interface.client.__dict__}")
+    logger.info(f"The action translator is {model_to_action_trans.__dict__}")
 
     step = 0
     done = False
@@ -111,7 +114,7 @@ def inference_loop(
     input("Press Enter to continue...")
 
     # Inference Loop
-    print("Starting inference loop...")
+    logger.info("Starting inference loop...")
     period = 1.0 / replay_frequency
 
     while not done:
@@ -119,8 +122,8 @@ def inference_loop(
             print("Reached the end of the dataset.")
             break
 
-        print(f"Step {step} / {len(dataset)}")
-        print(f"Dataset keys: {dataset[step].keys()}")
+        logger.info(f"Step {step} / {len(dataset)}")
+        logger.info(f"Dataset keys: {dataset[step].keys()}")
 
         if dataset[step]["episode_index"] != ep_index:
             step += 1
@@ -129,10 +132,10 @@ def inference_loop(
         start_time = time.time()
         observation = robot_interface.get_observation("cpu")
         time_to_get_obs = time.time() - start_time
-        print(f"Time to get observation: {time_to_get_obs} s")
+        logger.info(f"Time to get observation: {time_to_get_obs} s")
 
         if observation:
-            print(f"Observation received: {observation}")
+            logger.debug(f"Observation received: {observation}")
             action = dataset[step]["action"]
 
             if ask_for_input:
@@ -150,7 +153,7 @@ def inference_loop(
         elapsed_time = time.time() - start_time
         sleep_duration = period - elapsed_time
 
-        print(f"Sleep duration: {sleep_duration} s")
+        logger.debug(f"Sleep duration: {sleep_duration} s")
 
         # wait for input
         # input("Press Enter to continue...")
