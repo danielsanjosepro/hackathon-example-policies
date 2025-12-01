@@ -22,6 +22,7 @@ import grpc
 import numpy as np
 import torch
 from lerobot.datasets.lerobot_dataset import LeRobotDataset
+from example_policies.robot_deploy.robot_io.robot_client import RobotClient
 from rich import print
 
 from example_policies.robot_deploy.action_translator import ActionTranslator
@@ -139,7 +140,11 @@ def inference_loop(
             action = model_to_action_trans.translate(action, observation)
             dbg_printer.print(step, observation, action, raw_action=False)
 
-            robot_interface.send_action(action, model_to_action_trans.action_mode)
+            robot_interface.send_action(
+                action,
+                action_mode=model_to_action_trans.action_mode,
+                ctrl_mode=RobotClient.CART_WAYPOINT,
+            )
 
         elapsed_time = time.time() - start_time
         sleep_duration = period - elapsed_time
