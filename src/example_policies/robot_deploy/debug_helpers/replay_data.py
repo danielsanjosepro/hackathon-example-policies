@@ -22,6 +22,7 @@ import grpc
 import numpy as np
 import torch
 from lerobot.datasets.lerobot_dataset import LeRobotDataset
+from rich import print
 
 from example_policies.robot_deploy.action_translator import ActionTranslator
 from example_policies.robot_deploy.policy_loader import load_metadata
@@ -88,8 +89,8 @@ def inference_loop(
     model_to_action_trans = ActionTranslator(cfg)
 
     print(f"Replaying episode {ep_index} from {data_dir}...")
-    print(f"The robot interface is {robot_interface}")
-    print(f"The action translator is {model_to_action_trans}")
+    print(f"The robot interface is {robot_interface.__dict__}")
+    print(f"The action translator is {model_to_action_trans.__dict__}")
 
     step = 0
     done = False
